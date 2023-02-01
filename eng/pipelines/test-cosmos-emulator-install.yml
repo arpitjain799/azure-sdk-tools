@@ -13,4 +13,4 @@ jobs:
     steps:
     - template: /eng/common/pipelines/templates/steps/cosmos-emulator.yml
       parameters:
-        StartParameters: '/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /disableratelimiting /partitioncount=50 /consistency=Strong'
+        StartParameters: '/noexplorer /noui /enablepreview /disableratelimiting /partitioncount=50 /consistency=Strong'

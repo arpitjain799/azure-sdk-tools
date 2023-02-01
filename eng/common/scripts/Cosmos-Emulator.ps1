@@ -23,8 +23,10 @@ Param (
   [string] $Stage
 )
 
-$targetDir = Join-Path $Env:Temp AzureCosmosEmulator
-$logFile = Join-Path $Env:Temp cosmos-emulator-log.txt
+$baseInstallDir = Join-Path $Env:Temp AzureCosmosEmulator
+$targetDir = Join-Path $baseInstallDir "Install"
+$logFile = Join-Path $baseInstallDir cosmos-emulator-log.txt
+$installerFile = Join-Path $baseInstallDir "cosmos-emulator.msi"
 $productName = "Azure Cosmos DB Emulator"
 $emulator = (Join-Path $targetDir (Join-Path $productName "Microsoft.Azure.Cosmos.Emulator.exe"))
 
@@ -51,9 +53,9 @@ if ($Stage -eq "Install")
     Clear-Content -Path $logFile
 
     # Might need to manually download at some point as msiexec might get blocked from accepting urls
-    #Invoke-WebRequest $EmulatorMsiUrl -outfile "cosmos-setup.msi"
+    Invoke-WebRequest $EmulatorMsiUrl -OutFile $installerFile
 
-    $msiexecOptions = "/a $EmulatorMsiUrl TARGETDIR=$targetDir /qn /liew $logFile"
+    $msiexecOptions = "/a $installerFile TARGETDIR=$targetDir /qn /liew $logFile"
     Write-Host "msiexec $msiexecOptions"
     $installProcess  = Start-Process msiexec -Wait -PassThru -ArgumentList $msiexecOptions
     Get-Content $logFile
@@ -127,6 +129,7 @@ if ($Stage -eq "Launch")
   }
 
   do {
+    ps *cosmos*
     $process = Start-Process $emulator -ArgumentList "/getstatus" -PassThru -Wait
     switch ($process.ExitCode) {
       1 {
