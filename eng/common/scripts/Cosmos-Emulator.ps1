@@ -28,7 +28,8 @@ $logFile = Join-Path $Env:Temp cosmos-emulator-log.txt
 $productName = "Azure Cosmos DB Emulator"
 $emulator = (Join-Path $targetDir (Join-Path $productName "Microsoft.Azure.Cosmos.Emulator.exe"))
 
-#Add-MpPreference -ExclusionPath $targetDir
+# Exclude path for defender scanning to speed up startup
+Add-MpPreference -ExclusionPath $targetDir
 
 if ($Stage -eq "Install")
 {
