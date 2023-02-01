@@ -4,8 +4,7 @@ trigger: none
 pr: none
 
 pool:
-  name: azsdk-pool-mms-ubuntu-2204-general
-  vmImage: MMSUbuntu22.04
+  name: azsdk-pool-mms-win-2022-general
 
 jobs:
   - job:
