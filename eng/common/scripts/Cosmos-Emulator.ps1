@@ -30,6 +30,8 @@ $emulator = (Join-Path $targetDir (Join-Path $productName "Microsoft.Azure.Cosmo
 
 # Exclude path for defender scanning to speed up startup
 Add-MpPreference -ExclusionPath $targetDir
+$ep = (Get-MPPreference).ExclusionPath
+Write-Host "Scan exclusion paths: $ep"
 
 if ($Stage -eq "Install")
 {
