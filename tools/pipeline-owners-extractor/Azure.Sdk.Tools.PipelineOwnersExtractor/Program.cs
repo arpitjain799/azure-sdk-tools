@@ -1,72 +1,48 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.Identity;
-using Azure.Sdk.Tools.NotificationConfiguration;
-using Azure.Sdk.Tools.NotificationConfiguration.Helpers;
-using Azure.Sdk.Tools.NotificationConfiguration.Services;
-using Azure.Sdk.Tools.PipelineOwnersExtractor.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.Services.Common;
-using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.Graph;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Azure.Sdk.Tools.PipelineOwnersExtractor
 {
     public class Program
     {
+        private static readonly JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented, Converters = { new StringEnumConverter() } };
+
         public static async Task Main(string[] args)
         {
             Console.WriteLine("Initializing PipelineOwnersExtractor");
 
-            using var host = Host.CreateDefaultBuilder(args)
-                // This affects config file loading and defaults to Directory.GetCurrentDirectory()
-                .UseContentRoot(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-                .ConfigureServices((context, services) =>
-                {
-                    services.AddSingleton<TokenCredential, DefaultAzureCredential>();
-                    services.AddSingleton<ISecretClientProvider, SecretClientProvider>();
-                    services.Configure<PipelineOwnerSettings>(context.Configuration);
-                    services.AddSingleton<IPostConfigureOptions<PipelineOwnerSettings>, PostConfigureKeyVaultSettings<PipelineOwnerSettings>>();
-                    services.AddSingleton<GitHubService>();
-                    services.AddSingleton(CreateGithubAadConverter);
-                    services.AddSingleton(CreateAzureDevOpsService);
-                    services.AddSingleton<Processor>();
-                })
-                .Build();
-
-            var processor = host.Services.GetRequiredService<Processor>();
-
-            await processor.ExecuteAsync();
+            await DumpMeInfoAsync(new ManagedIdentityCredential(null, new TokenCredentialOptions{ Retry = { MaxRetries = 2, Delay = TimeSpan.FromSeconds(1), NetworkTimeout = TimeSpan.FromSeconds(3)} }));
+            await DumpMeInfoAsync(new AzureCliCredential());
+            await DumpMeInfoAsync(new AzurePowerShellCredential());
+            await DumpMeInfoAsync(new DefaultAzureCredential());
         }
 
-        private static AzureDevOpsService CreateAzureDevOpsService(IServiceProvider provider)
+        public static async Task DumpMeInfoAsync(TokenCredential credential)
         {
-            var logger = provider.GetRequiredService<ILogger<AzureDevOpsService>>();
-            var settings = provider.GetRequiredService<IOptions<PipelineOwnerSettings>>().Value;
+            Console.WriteLine();
+            Console.WriteLine(credential.GetType().Name);
 
-            var uri = new Uri($"https://dev.azure.com/{settings.Account}");
-            var credentials = new VssBasicCredential("pat", settings.AzureDevOpsPat);
-            var connection = new VssConnection(uri, credentials);
+            try
+            {
+                string[] scopes = { "https://graph.microsoft.com/.default" };
 
-            return new AzureDevOpsService(connection, logger);
-        }
+                var graphClient = new GraphServiceClient(credential, scopes);
 
-        private static GitHubToAADConverter CreateGithubAadConverter(IServiceProvider provider)
-        {
-            var logger = provider.GetRequiredService<ILogger<GitHubToAADConverter>>();
-            var settings = provider.GetRequiredService<IOptions<PipelineOwnerSettings>>().Value;
+                var user = await graphClient.Me.Request().GetAsync();
 
-            var credential = new ClientSecretCredential(
-                settings.OpenSourceAadTenantId, 
-                settings.OpenSourceAadAppId,
-                settings.OpenSourceAadSecret);
+                Console.WriteLine(JsonConvert.SerializeObject(user, jsonSerializerSettings));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
 
-            return new GitHubToAADConverter(credential, logger);
+            Console.WriteLine();
         }
     }
 }
