@@ -22,20 +22,21 @@ stages:
       DotNetDevOpsFeed: "https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-net/nuget/v3/index.json"
       OutputPath: '$(Agent.BuildDirectory)/pipelineOwners.json'
     steps:
-      - task: DotNetCoreCLI@2
-        displayName: 'Install Pipeline Owners Extractor'
+      - task: UseDotNet@2
+        condition: eq(${{ parameters.SkipDotNetInstall }}, false)
+        displayName: 'Use .NET Core sdk ${{ coalesce( parameters.DotNetCoreVersion, variables.DotNetCoreVersion) }}'
         inputs:
-          command: custom
-          custom: 'tool'
-          arguments: 'install --global --add-source "$(DotNetDevOpsFeed)" --version "$(PipelineOwnersExtractorVersion)" "Azure.Sdk.Tools.PipelineOwnersExtractor"'
-          workingDirectory: '$(Agent.BuildDirectory)'
+          version: '${{ coalesce( parameters.DotNetCoreVersion, variables.DotNetCoreVersion) }}'
+              
       - task: AzureCLI@2
         displayName: Run Pipeline Owners Extractor
+        workingDirectory: $(Build.SourcesDirectory)/${{parameters.ToolDirectory}}/Azure.Sdk.Tools.PipelineOwnersExtractor
         inputs:
           azureSubscription: 'Azure SDK Engineering System'
           scriptType: pscore
           scriptLocation: inlineScript
-          inlineScript: pipeline-owners-extractor --output "$(OutputPath)"
+          inlineScript: dotnet run
+          
       - publish: $(OutputPath)
         displayName: Publish pipelineOwners artifact
         artifact: pipelineOwners
