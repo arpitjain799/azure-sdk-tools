@@ -30,12 +30,12 @@ stages:
               
       - task: AzureCLI@2
         displayName: Run Pipeline Owners Extractor
-        workingDirectory: $(Build.SourcesDirectory)/${{parameters.ToolDirectory}}/Azure.Sdk.Tools.PipelineOwnersExtractor
         inputs:
           azureSubscription: 'Azure SDK Engineering System'
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: dotnet run
+          workingDirectory: $(Build.SourcesDirectory)/${{parameters.ToolDirectory}}/Azure.Sdk.Tools.PipelineOwnersExtractor
 
       - publish: $(OutputPath)
         displayName: Publish pipelineOwners artifact
