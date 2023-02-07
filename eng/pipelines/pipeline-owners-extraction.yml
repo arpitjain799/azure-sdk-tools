@@ -13,8 +13,8 @@ stages:
   - job: Run
     timeoutInMinutes: 120
     pool:
-      name: azsdk-pool-mms-ubuntu-2004-general
-      vmImage: MMSUbuntu20.04
+      name: azsdk-pool-mms-ubuntu-2204-general
+      vmImage: MMSUbuntu22.04
 
     variables:
       Organization: azure-sdk
@@ -36,7 +36,7 @@ stages:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: dotnet run
-          
+
       - publish: $(OutputPath)
         displayName: Publish pipelineOwners artifact
         artifact: pipelineOwners
