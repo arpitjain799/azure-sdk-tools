@@ -1,8 +1,12 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Graph;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -29,13 +33,13 @@ namespace Azure.Sdk.Tools.PipelineOwnersExtractor
 
             try
             {
+                var claimIds = new[] {"aud", "iss", "app_displayname", "appid", "name", "idtype", "scp", "upn", "unique_name" };
                 string[] scopes = { "https://graph.microsoft.com/.default" };
 
-                var graphClient = new GraphServiceClient(credential, scopes);
+                var token = await credential.GetTokenAsync(new TokenRequestContext(scopes, null), CancellationToken.None);
+                var parsed = new JwtSecurityToken(token.Token);
 
-                var user = await graphClient.Me.Request().GetAsync();
-
-                Console.WriteLine(JsonConvert.SerializeObject(user, jsonSerializerSettings));
+                Console.WriteLine(JsonConvert.SerializeObject(new { parsed.Audiences, parsed.Issuer, Claims = parsed.Claims.Where(x => claimIds.Contains(x.Type)).Select(x => $"{x.Type}: {x.Value}") }, jsonSerializerSettings));
             }
             catch (Exception ex)
             {
