@@ -23,10 +23,9 @@ stages:
       OutputPath: '$(Agent.BuildDirectory)/pipelineOwners.json'
     steps:
       - task: UseDotNet@2
-        condition: eq(${{ parameters.SkipDotNetInstall }}, false)
-        displayName: 'Use .NET Core sdk ${{ coalesce( parameters.DotNetCoreVersion, variables.DotNetCoreVersion) }}'
+        displayName: 'Use .NET Core sdk 6.x'
         inputs:
-          version: '${{ coalesce( parameters.DotNetCoreVersion, variables.DotNetCoreVersion) }}'
+          version: '6.x'
               
       - task: AzureCLI@2
         displayName: Run Pipeline Owners Extractor
@@ -35,9 +34,5 @@ stages:
           scriptType: pscore
           scriptLocation: inlineScript
           inlineScript: dotnet run
-          workingDirectory: $(Build.SourcesDirectory)/${{parameters.ToolDirectory}}/Azure.Sdk.Tools.PipelineOwnersExtractor
+          workingDirectory: $(Build.SourcesDirectory)/tools/pipeline-owners-extractor/Azure.Sdk.Tools.PipelineOwnersExtractor
 
-      - publish: $(OutputPath)
-        displayName: Publish pipelineOwners artifact
-        artifact: pipelineOwners
-        condition: succeededOrFailed()
