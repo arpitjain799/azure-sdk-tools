@@ -70,6 +70,8 @@ stages:
           - script: set
             displayName: show all env vars
           - script: |
+              mv $REPO_ROOT/global.json $REPO_ROOT/global.json.back
+
               echo 'which dotnet'
               which dotnet
               echo 'dotnet --version'
@@ -83,9 +85,12 @@ stages:
 
               echo 'dotnet pack /p:ArtifactsPackagesDir=$(packagesToPublishDir) $(Warn) -c Release'
               dotnet pack /p:ArtifactsPackagesDir=$(packagesToPublishDir) $(Warn) -c Release
+
+              exit 1
             displayName: 'Build and Package'
             workingDirectory: '${{ coalesce(parameters.PackageDirectory, parameters.ToolDirectory) }}'
             env:
+              REPO_ROOT: $(Build.SourcesDirectory)
               DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
               DOTNET_CLI_TELEMETRY_OPTOUT: 1
               DOTNET_MULTILEVEL_LOOKUP: 0
