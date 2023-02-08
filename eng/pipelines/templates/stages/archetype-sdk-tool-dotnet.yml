@@ -69,7 +69,15 @@ stages:
               DotNetCoreVersion: ${{ parameters.DotNetCoreVersion }}
           - script: set
             displayName: show all env vars
-          - script: 'dotnet pack /p:ArtifactsPackagesDir=$(packagesToPublishDir) $(Warn) -c Release'
+          - script: |
+              set +x
+              which dotnet
+              dotnet --version
+              dotnet --info
+              dotnet --list-runtimes
+              dotnet --list-sdks
+
+              dotnet pack /p:ArtifactsPackagesDir=$(packagesToPublishDir) $(Warn) -c Release
             displayName: 'Build and Package'
             workingDirectory: '${{ coalesce(parameters.PackageDirectory, parameters.ToolDirectory) }}'
             env:
@@ -78,8 +86,8 @@ stages:
               DOTNET_MULTILEVEL_LOOKUP: 0
 
           # This step creates "$(packagesToPublishDir)" directory if it doesn't exist.
-          # This step is necessary since migration to net6.0. This is because since net6.0, 
-          # in case the "Build and Package" above would not output any packages to this directory, 
+          # This step is necessary since migration to net6.0. This is because since net6.0,
+          # in case the "Build and Package" above would not output any packages to this directory,
           # the "Publish to packages artifact" step below would fail on missing directory.
           - pwsh: |
               if (!(Test-Path -PathType container "$(packagesToPublishDir)")) {
@@ -155,9 +163,9 @@ stages:
               DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
               DOTNET_CLI_TELEMETRY_OPTOUT: 1
               DOTNET_MULTILEVEL_LOOKUP: 0
-          
+
           - ${{ parameters.TestPostSteps }}
-          
+
           - task: PublishTestResults@2
             condition: succeededOrFailed()
             inputs:
