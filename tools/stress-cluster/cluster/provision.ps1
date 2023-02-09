@@ -201,6 +201,9 @@ function SetEnvOutputs([hashtable]$params)
 
 function DeployClusterResources([hashtable]$params)
 {
+    Write-Host "bbp PARAMS FROM PATH"
+    Get-Content -Raw $PSScriptRoot/azure/parameters/$Environment.json `
+
     Write-Host "Deploying stress cluster resources"
     RunSupportingWhatIfFlag "--what-if" az deployment sub create `
         -o json `
@@ -314,6 +317,10 @@ function main()
 
     if (!$Development) {
         $params = LoadEnvParams
+
+        Write-Host "bbp PARAMS FOUND"
+        $params | ConvertTo-Json
+
         $STRESS_CLUSTER_RESOURCE_GROUP = "rg-stress-cluster-$($params.groupSuffix)"
         DeployStaticResources $params
         DeployClusterResources $params
